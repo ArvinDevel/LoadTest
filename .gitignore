@@ -1,0 +1,14 @@
+*~
+*.#~
+*.swp
+*.iml
+*.tgz
+.idea/
+.idea_modules/
+build/*.jar
+.settings
+.cache
+target/
+logs/
+log/
+out/
