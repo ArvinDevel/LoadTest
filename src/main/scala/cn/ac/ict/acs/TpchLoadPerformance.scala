@@ -2,10 +2,9 @@
  * Created by arvin on 16-2-26.
  */
 
+import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql.DataFrame
-
 case class Customer(
                      c_custkey: Int,
                      c_name: String,
@@ -129,13 +128,15 @@ abstract class TpchLoadPerformance {
       df.write.mode("overwrite").json(OUTPUT_DIR + "/" + className + ".out") // json to avoid alias
   }
   def outputDF(df: DataFrame, format: String): Unit ={
+
+
     val startTime = System.currentTimeMillis()
 
     if(format == "orc"){
-      df.write.mode("overwrite").orc(OUTPUT_DIR + "/" + className + ".orc")
+      df.write.mode("overwrite").orc(OUTPUT_DIR + "/" + df.toString() + ".orc")
     }
     else if(format == "parquet"){
-      df.write.mode("overwrite").parquet(OUTPUT_DIR + "/" + className + ".parquet")
+      df.write.mode("overwrite").parquet(OUTPUT_DIR + "/" + df.toString() + ".parquet")
     }
     val endTime = System.currentTimeMillis()
     println("write " + format + "'s time used is " + (endTime - startTime))
@@ -155,8 +156,12 @@ object TpchLoadPerformance extends TpchLoadPerformance{
     // on or off
     val snappyFlag = args(2)
 
-    if(snappyFlag == "on")
+    // use snappy or uncompressed or default
+    if(snappyFlag == "snappy")
       execute()
+    else if(snappyFlag == "uncompressed")
+      uncompressed()
+
 
     tblName match {
       case "customer" =>
@@ -189,5 +194,11 @@ object TpchLoadPerformance extends TpchLoadPerformance{
     sc.hadoopConfiguration.set("hive.exec.orc.default.compress","SNAPPY")
     sqlContext.setConf("spark.sql.parquet.compression.codec","snappy")
   }
-}
 
+  // should test uncompressed performance
+  // 3.11 Arvin
+  def uncompressed(): Unit ={
+    sc.hadoopConfiguration.set("hive.exec.orc.default.compress","NONE")
+    sqlContext.setConf("spark.sql.parquet.compression.codec","uncompressed")
+  }
+}

@@ -1,0 +1,2 @@
+these shell still need to be modified before every run, some parameters include the source file, written file format.
+because the data cache exist in worker node, these shell should be run at worker node, so the clear cache has effect.
