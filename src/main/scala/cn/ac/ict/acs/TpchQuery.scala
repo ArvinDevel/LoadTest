@@ -45,7 +45,7 @@ abstract class TpchQuery {
   val dfList = Array(customerT,lineitemT,nationT,regionT,orderT,partT,partsuppT,supplierT)
 
   // orc/parquet table
-  def customer: DataFrame = _
+  var customer: DataFrame = _
   var lineitem: DataFrame = _
   var nation: DataFrame = _
   var order: DataFrame = _
@@ -54,12 +54,15 @@ abstract class TpchQuery {
   var region: DataFrame = _
   var supplier: DataFrame = _
 
-  //var dfList2 = Array(customer,lineitem,nation,region,order,part,partsupp,supplier)
+//  var dfList2 = Array(customer,lineitem,nation,region,order,part,partsupp,supplier)
 
   /**
    *  implemented in children classes and hold the actual query
    */
-  def execute(): Unit
+  def execute():Unit=
+  {
+  initTbl()
+  }
 
   val format = TpchQuery.format
   val compression = TpchQuery.compression
@@ -73,29 +76,42 @@ abstract class TpchQuery {
 //      println("after initialize still null")
 //
 //
-//  }
-  if(format == "orc"){
-    customer = sqlContext.read.orc(OUTPUT_DIR + "/" + compression + "/" + 0 + ".orc")
-    lineitem = sqlContext.read.orc(OUTPUT_DIR + "/" + compression + "/" + 1 + ".orc")
-    nation = sqlContext.read.orc(OUTPUT_DIR + "/" + compression + "/" + 2 + ".orc")
-    region = sqlContext.read.orc(OUTPUT_DIR + "/" + compression + "/" + 3 + ".orc")
-    order = sqlContext.read.orc(OUTPUT_DIR + "/" + compression + "/" + 4 + ".orc")
-    part = sqlContext.read.orc(OUTPUT_DIR + "/" + compression + "/" + 5 + ".orc")
-    partsupp = sqlContext.read.orc(OUTPUT_DIR + "/" + compression + "/" + 6 + ".orc")
-    supplier = sqlContext.read.orc(OUTPUT_DIR + "/" + compression + "/" + 7 + ".orc")
+//
+  //  }
 
 
-  }  else if(format == "parquet"){
-    customer = sqlContext.read.parquet(OUTPUT_DIR + "/" + compression + "/" + 0 + ".parquet")
-    lineitem = sqlContext.read.parquet(OUTPUT_DIR + "/" + compression + "/" + 1 + ".parquet")
-    nation = sqlContext.read.parquet(OUTPUT_DIR + "/" + compression + "/" + 2 + ".parquet")
-    region = sqlContext.read.parquet(OUTPUT_DIR + "/" + compression + "/" + 3 + ".parquet")
-    order = sqlContext.read.parquet(OUTPUT_DIR + "/" + compression + "/" + 4 + ".parquet")
-    part = sqlContext.read.parquet(OUTPUT_DIR + "/" + compression + "/" + 5 + ".parquet")
-    partsupp = sqlContext.read.parquet(OUTPUT_DIR + "/" + compression + "/" + 6 + ".parquet")
-    supplier = sqlContext.read.parquet(OUTPUT_DIR + "/" + compression + "/" + 7 + ".parquet")
+  // directly put init table from orc/parquet file will cause read exception, because i
+  // haven't create them.
+  // can't use def to delay execute, scala treat it as val.
+  // so encapsulate it in a func and call it in queryImpl.
+  // 3.19 Arvin
+
+  def initTbl(): Unit ={
+    if(format == "orc"){
+      customer = sqlContext.read.orc(OUTPUT_DIR + "/" + compression + "/" + 0 + ".orc")
+      lineitem = sqlContext.read.orc(OUTPUT_DIR + "/" + compression + "/" + 1 + ".orc")
+      nation = sqlContext.read.orc(OUTPUT_DIR + "/" + compression + "/" + 2 + ".orc")
+      region = sqlContext.read.orc(OUTPUT_DIR + "/" + compression + "/" + 3 + ".orc")
+      order = sqlContext.read.orc(OUTPUT_DIR + "/" + compression + "/" + 4 + ".orc")
+      part = sqlContext.read.orc(OUTPUT_DIR + "/" + compression + "/" + 5 + ".orc")
+      partsupp = sqlContext.read.orc(OUTPUT_DIR + "/" + compression + "/" + 6 + ".orc")
+      supplier = sqlContext.read.orc(OUTPUT_DIR + "/" + compression + "/" + 7 + ".orc")
+
+
+    }  else if(format == "parquet"){
+      customer = sqlContext.read.parquet(OUTPUT_DIR + "/" + compression + "/" + 0 + ".parquet")
+      lineitem = sqlContext.read.parquet(OUTPUT_DIR + "/" + compression + "/" + 1 + ".parquet")
+      nation = sqlContext.read.parquet(OUTPUT_DIR + "/" + compression + "/" + 2 + ".parquet")
+      region = sqlContext.read.parquet(OUTPUT_DIR + "/" + compression + "/" + 3 + ".parquet")
+      order = sqlContext.read.parquet(OUTPUT_DIR + "/" + compression + "/" + 4 + ".parquet")
+      part = sqlContext.read.parquet(OUTPUT_DIR + "/" + compression + "/" + 5 + ".parquet")
+      partsupp = sqlContext.read.parquet(OUTPUT_DIR + "/" + compression + "/" + 6 + ".parquet")
+      supplier = sqlContext.read.parquet(OUTPUT_DIR + "/" + compression + "/" + 7 + ".parquet")
+
+    }
 
   }
+
 
 
 //  if(lineitem == null)

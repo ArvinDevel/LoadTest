@@ -10,6 +10,8 @@ class Q01 extends TpchQuery {
 
   override def execute(): Unit = {
 
+    super.execute()
+
     val decrease = udf { (x: Double, y: Double) => x * (1 - y) }
     val increase = udf { (x: Double, y: Double) => x * (1 + y) }
 
@@ -37,6 +39,7 @@ class Q02 extends TpchQuery {
 
   override def execute(): Unit = {
 
+    super.execute()
     val europe = region.filter($"r_name" === "EUROPE")
       .join(nation, $"r_regionkey" === nation("n_regionkey"))
       .join(supplier, $"n_nationkey" === supplier("s_nationkey"))
@@ -67,6 +70,7 @@ class Q03 extends TpchQuery {
 
   override def execute(): Unit = {
 
+    super.execute()
     val decrease = udf { (x: Double, y: Double) => x * (1 - y) }
 
     val fcust = customer.filter($"c_mktsegment" === "BUILDING")
@@ -94,7 +98,7 @@ class Q04 extends TpchQuery {
   import sqlContext.implicits._
 
   override def execute(): Unit = {
-
+super.execute()
     val forders = order.filter($"o_orderdate" >= "1993-07-01" && $"o_orderdate" < "1993-10-01")
     val flineitems = lineitem.filter($"l_commitdate" < $"l_receiptdate")
       .select($"l_orderkey")
@@ -115,7 +119,7 @@ class Q05 extends TpchQuery {
   import sqlContext.implicits._
 
   override def execute(): Unit = {
-
+super.execute()
     val decrease = udf { (x: Double, y: Double) => x * (1 - y) }
 
     val forders = order.filter($"o_orderdate" < "1995-01-01" && $"o_orderdate" >= "1994-01-01")
@@ -142,7 +146,7 @@ class Q06 extends TpchQuery {
   import sqlContext.implicits._
 
   override def execute(): Unit = {
-
+super.execute()
     val res = lineitem.filter($"l_shipdate" >= "1994-01-01" && $"l_shipdate" < "1995-01-01" && $"l_discount" >= 0.05 && $"l_discount" <= 0.07 && $"l_quantity" < 24)
       .agg(sum($"l_extendedprice" * $"l_discount"))
 
@@ -156,7 +160,7 @@ class Q07 extends TpchQuery {
   import sqlContext.implicits._
 
   override def execute(): Unit = {
-
+super.execute()
     val getYear = udf { (x: String) => x.substring(0, 4) }
     val decrease = udf { (x: Double, y: Double) => x * (1 - y) }
 
@@ -192,6 +196,7 @@ class Q08 extends TpchQuery {
   import sqlContext.implicits._
 
   override def execute(): Unit = {
+    super.execute()
 
     val getYear = udf { (x: String) => x.substring(0, 4) }
     val decrease = udf { (x: Double, y: Double) => x * (1 - y) }
@@ -231,6 +236,7 @@ class Q09 extends TpchQuery {
   import sqlContext.implicits._
 
   override def execute(): Unit = {
+    super.execute()
 
     val getYear = udf { (x: String) => x.substring(0, 4) }
     val expr = udf { (x: Double, y: Double, v: Double, w: Double) => x * (1 - y) - (v * w) }
@@ -260,6 +266,7 @@ class Q10 extends TpchQuery {
   import sqlContext.implicits._
 
   override def execute(): Unit = {
+    super.execute()
 
     val decrease = udf { (x: Double, y: Double) => x * (1 - y) }
 
@@ -287,6 +294,7 @@ class Q11 extends TpchQuery {
   import sqlContext.implicits._
 
   override def execute(): Unit = {
+    super.execute()
 
     val mul = udf { (x: Double, y: Int) => x * y }
     val mul01 = udf { (x: Double) => x * 0.0001 }
@@ -314,6 +322,7 @@ class Q12 extends TpchQuery {
   import sqlContext.implicits._
 
   override def execute(): Unit = {
+    super.execute()
 
     val mul = udf { (x: Double, y: Double) => x * y }
     val highPriority = udf { (x: String) => if (x == "1-URGENT" || x == "2-HIGH") 1 else 0 }
@@ -340,6 +349,7 @@ class Q13 extends TpchQuery {
   import sqlContext.implicits._
 
   override def execute(): Unit = {
+    super.execute()
 
     val special = udf { (x: String) => x.matches(".*special.*requests.*") }
 
@@ -361,6 +371,7 @@ class Q14 extends TpchQuery {
   import sqlContext.implicits._
 
   override def execute(): Unit = {
+    super.execute()
 
     val reduce = udf { (x: Double, y: Double) => x * (1 - y) }
     val promo = udf { (x: String, y: Double) => if (x.startsWith("PROMO")) y else 0 }
@@ -380,6 +391,7 @@ class Q15 extends TpchQuery {
   import sqlContext.implicits._
 
   override def execute(): Unit = {
+    super.execute()
 
     val decrease = udf { (x: Double, y: Double) => x * (1 - y) }
 
@@ -406,6 +418,7 @@ class Q16 extends TpchQuery {
   import sqlContext.implicits._
 
   override def execute(): Unit = {
+    super.execute()
 
     val decrease = udf { (x: Double, y: Double) => x * (1 - y) }
     val complains = udf { (x: String) => x.matches(".*Customer.*Complaints.*") }
@@ -435,6 +448,7 @@ class Q17 extends TpchQuery {
   import sqlContext.implicits._
 
   override def execute(): Unit = {
+    super.execute()
 
     val mul02 = udf { (x: Double) => x * 0.2 }
 
@@ -462,6 +476,7 @@ class Q18 extends TpchQuery {
   import sqlContext.implicits._
 
   override def execute(): Unit = {
+    super.execute()
 
     val res = lineitem.groupBy($"l_orderkey")
       .agg(sum($"l_quantity").as("sum_quantity"))
@@ -486,6 +501,7 @@ class Q19 extends TpchQuery {
   import sqlContext.implicits._
 
   override def execute(): Unit = {
+    super.execute()
 
     val sm = udf { (x: String) => x.matches("SM CASE|SM BOX|SM PACK|SM PKG") }
     val md = udf { (x: String) => x.matches("MED BAG|MED BOX|MED PKG|MED PACK") }
@@ -523,6 +539,7 @@ class Q20 extends TpchQuery {
   import sqlContext.implicits._
 
   override def execute(): Unit = {
+    super.execute()
 
     val forest = udf { (x: String) => x.startsWith("forest") }
 
@@ -555,6 +572,7 @@ class Q21 extends TpchQuery {
   import sqlContext.implicits._
 
   override def execute(): Unit = {
+    super.execute()
 
     val fsupplier = supplier.select($"s_suppkey", $"s_nationkey", $"s_name")
 
@@ -601,6 +619,7 @@ class Q22 extends TpchQuery {
   import sqlContext.implicits._
 
   override def execute(): Unit = {
+    super.execute()
 
     val sub2 = udf { (x: String) => x.substring(0, 2) }
     val phone = udf { (x: String) => x.matches("13|31|23|29|30|18|17") }
