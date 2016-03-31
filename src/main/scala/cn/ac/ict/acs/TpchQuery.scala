@@ -1,8 +1,10 @@
-import java.util.concurrent.atomic.AtomicInteger
-
-import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.{SparkConf, SparkContext}
+
+import scala.collection.mutable.ArrayBuffer
+import scala.sys.process._
+import scala.util.Random
 
 /**
  * Created by arvin on 16-3-14.
@@ -12,7 +14,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 // and the out file format should be consistent.
 // TODO: orc or parquet tuning strategy is turning on?
 // 3.14 Arvin
-abstract class TpchQuery {
+abstract class TpchQuery(sc: SparkContext, sqlContext: SQLContext) {
 
   // read files from local FS
   // val INPUT_DIR = "file://" + new File(".").getAbsolutePath() + "/dbgen"
@@ -23,14 +25,8 @@ abstract class TpchQuery {
   // if set write results to hdfs, if null write to stdout
   val OUTPUT_DIR: String = "/out"
 
-  // get the name of the class excluding dollar signs and package
-  val className = this.getClass.getName.split("\\.").last.replaceAll("\\$", "")
 
-  // create spark context and set class name as the app name
-  val sc = new SparkContext(new SparkConf().setAppName("TPC-H " + className))
 
-  // convert an RDDs to a DataFrames
-  val sqlContext = new HiveContext(sc)
   import sqlContext.implicits._
 
   val customerT = sc.textFile(INPUT_DIR + "/customer.tbl").map(_.split('|')).map(p => Customer(p(0).trim.toInt, p(1).trim, p(2).trim, p(3).trim.toInt, p(4).trim, p(5).trim.toDouble, p(6).trim, p(7).trim)).toDF()
@@ -124,20 +120,33 @@ abstract class TpchQuery {
 
   }
 
-  val atomicInt:AtomicInteger = new AtomicInteger()
   // output query, first load table from orc/parquet file; then execute query
   def outputDF(df: DataFrame): Unit = {
+    val iters = TpchQuery.iters
+    val runTimes = ArrayBuffer[Long]()
+    for (i <- 0 until iters + 1) {
 
-    val startTime = System.currentTimeMillis()
+      clrCache()
+      val random = Random.nextInt()
 
-    df.write.mode("overwrite").json(OUTPUT_DIR + "/" + atomicInt.getAndIncrement() + ".out")
+      val start = System.nanoTime()
 
-    val endTime = System.currentTimeMillis()
-    println("outputDf " + format + "'s time used is " + (endTime - startTime))
+      df.write.mode("overwrite").json(OUTPUT_DIR + "/" + random + ".out")
 
-    // should stop sc
-    // 3.16 Arvin
-    sc.stop()
+      val end = System.nanoTime()
+      val runTime = end - start
+      if (i > 0) {
+        runTimes += runTime
+      }
+
+        // scalastyle:off
+        println(s"Iteration $i took ${runTime / 1000} microseconds")
+        // scalastyle:on
+    }
+    val best = runTimes.min
+    val avg = runTimes.sum / iters
+
+    println(s"Average time is ${avg/1000000} seconds, and best time is ${best/1000} microseconds")
 
   }
 
@@ -152,6 +161,20 @@ abstract class TpchQuery {
     sqlContext.setConf("spark.sql.parquet.compression.codec","uncompressed")
   }
 
+  /**
+   * clr worker's memory by call shell script.
+   *
+   */
+  def clrCache(): Unit = {
+    if (new java.io.File("/home/pandatest/clrCache.sh").exists) {
+      val commands = Seq("bash", "-c", s"/home/pandatest/clrCache.sh")
+      commands.!!
+      System.err.println("free_memory succeed")
+    } else {
+      System.err.println("free_memory script doesn't exists")
+    }
+  }
+
   // write orc or parquet file with different compression
   // different compression use different directories.
   // 3.14 Arvin
@@ -163,7 +186,9 @@ abstract class TpchQuery {
     else if(compression == "uncompressed")
       uncompressed()
 
-    val startTime = System.currentTimeMillis()
+    clrCache()
+
+    val startTime = System.nanoTime()
 
 
     if(format == "orc"){
@@ -181,8 +206,8 @@ abstract class TpchQuery {
         i += 1
       }
     }
-    val endTime = System.currentTimeMillis()
-    println("write all tables with " + format + "'s time used is " + (endTime - startTime))
+    val endTime = System.nanoTime()
+    println("write all tables with " + format + "'s time used is " + (endTime - startTime)/1000000)
 
   }
 
@@ -191,18 +216,32 @@ abstract class TpchQuery {
 // the query time contains the time to load orc/parquet and write output to hdfs.
 object TpchQuery {
 
+  // create spark context and set class name as the app name
+  val sc = new SparkContext(new SparkConf().setAppName("TPC-H Benchmark evaluation"))
+
+  // convert an RDDs to a DataFrames
+  val sqlContext = new HiveContext(sc)
 
   /**
    * Execute query reflectively
    */
   def executeQuery(queryNo: Int): Unit = {
     assert(queryNo >= 1 && queryNo <= 22, "Invalid query number")
-    Class.forName(f"Q${queryNo}%02d").newInstance.asInstanceOf[{ def execute }].execute
+
+    System.err.println("queryNo: " + queryNo)
+    // classof[T] is equialent as T.class in java.
+    // T.getClass
+    val ctr = Class.forName(f"Q${queryNo}%02d").getConstructor(classOf[SparkContext],classOf[SQLContext])
+    ctr.newInstance(sc,sqlContext).asInstanceOf[{def execute}].execute
   }
+
 
   var format:String = _
   var compression:String = _
 
+  // set default value is 2
+  // 3.22 Arvin
+  var iters:Int = 2
   def main(args: Array[String]): Unit = {
 
     require(args.length > 2)
@@ -218,7 +257,7 @@ object TpchQuery {
 
     if(operationType == "load")
       {
-        new TpchQuery {
+        new TpchQuery(sc,sqlContext) {
           /**
            * implemented in children classes and hold the actual query
            */
@@ -227,24 +266,30 @@ object TpchQuery {
       }
     else if(operationType == "query"){
 
-      val startTime = System.currentTimeMillis()
-
       // only one sparkContext can be existed in one jvm by default.
       // so execute one query every time and calculate the average.
       // 3.15 Arvin
 
-      executeQuery(args(3).toInt)
-//      var num = 1
-//      while(num < 23 ){
-//        executeQuery(num)
-//        num += 1
-//      }
 
-      val endTime = System.currentTimeMillis()
-      println("query all tables with " + format + "'s time used is " + (endTime - startTime))
+      // add iteration num control, and elimate first execution
+      // 3.21 Arvin
+      //iter execution is in one instance to avoid instance creation overhead,
+      // and to have a better jit performance.
+      // should call this before the executeQuery, or iters will be default
+      // 3.22 Arvin
+      if(args.length > 3)
+         iters = args(4).toInt
+
+        executeQuery(args(3).toInt)
+
+
+
+
+
     }
 
 
+    sc.stop()
   }
 
 }

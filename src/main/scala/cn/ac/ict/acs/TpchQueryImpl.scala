@@ -1,10 +1,23 @@
+import org.apache.spark.SparkContext
+import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.functions._
 
 /**
  * Created by arvin on 16-3-14.
  */
 
-class Q01 extends TpchQuery {
+/**
+ * select l_returnflag,	l_linestatus,	sum(l_quantity) as sum_qty,	sum(l_extendedprice) as sum_base_price,
+	sum(l_extendedprice * (1 - l_discount)) as sum_disc_price,sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge,
+	avg(l_quantity) as avg_qty,	avg(l_extendedprice) as avg_price,	avg(l_discount) as avg_disc,count(*) as count_order
+from
+	lineitem
+where
+	l_shipdate <= date '1998-12-01' - interval ':1' day (3)
+group by	l_returnflag,	l_linestatus
+order by	l_returnflag,	l_linestatus;
+ */
+class Q01(sc:SparkContext,sqlContext: SQLContext) extends TpchQuery(sc,sqlContext) {
 
   import sqlContext.implicits._
 
@@ -22,10 +35,14 @@ class Q01 extends TpchQuery {
 
     val res = lineitem.filter($"l_shipdate" <= "1998-09-02")
       .groupBy($"l_returnflag", $"l_linestatus")
-      .agg(sum($"l_quantity"), sum($"l_extendedprice"),
+      .agg(sum($"l_quantity"),
+        sum($"l_extendedprice"),
         sum(decrease($"l_extendedprice", $"l_discount")),
         sum(increase(decrease($"l_extendedprice", $"l_discount"), $"l_tax")),
-        avg($"l_quantity"), avg($"l_extendedprice"), avg($"l_discount"), count($"l_quantity"))
+        avg($"l_quantity"),
+        avg($"l_extendedprice"),
+        avg($"l_discount"),
+        count($"l_quantity"))
       .sort($"l_returnflag", $"l_linestatus")
 
     outputDF(res)
@@ -33,7 +50,25 @@ class Q01 extends TpchQuery {
   }
 
 }
-class Q02 extends TpchQuery {
+/**
+ *select s_acctbal,	s_name,	n_name,	p_partkey,p_mfgr,	s_address,	s_phone,	s_comment
+from 	part,supplier,	partsupp,	nation,	region
+where
+	p_partkey = ps_partkey	and s_suppkey = ps_suppkey	and p_size = :1	and p_type like '%:2'
+	and s_nationkey = n_nationkey	and n_regionkey = r_regionkey	and r_name = ':3'
+  and ps_supplycost = (
+		select
+			min(ps_supplycost)
+		from
+			partsupp,supplier,nation,region
+		where
+			p_partkey = ps_partkey and s_suppkey = ps_suppkey and s_nationkey = n_nationkey
+			and n_regionkey = r_regionkey and r_name = ':3'
+	)
+order by s_acctbal desc, n_name, s_name, p_partkey;
+ *
+*/
+class Q02(sc:SparkContext,sqlContext: SQLContext) extends TpchQuery(sc,sqlContext) {
 
   import sqlContext.implicits._
 
@@ -64,7 +99,20 @@ class Q02 extends TpchQuery {
   }
 
 }
-class Q03 extends TpchQuery {
+/*
+select
+	l_orderkey,	sum(l_extendedprice * (1 - l_discount)) as revenue,o_orderdate,o_shippriority
+from
+	customer,	orders, lineitem
+where
+	c_mktsegment = ':1'	and c_custkey = o_custkey
+	and l_orderkey = o_orderkey and o_orderdate < date ':2' and l_shipdate > date ':2'
+group by
+	l_orderkey,	o_orderdate,o_shippriority
+order by
+	revenue desc,	o_orderdate;
+*/
+class Q03(sc:SparkContext,sqlContext: SQLContext) extends TpchQuery(sc,sqlContext) {
 
   import sqlContext.implicits._
 
@@ -93,7 +141,7 @@ class Q03 extends TpchQuery {
   }
 
 }
-class Q04 extends TpchQuery {
+class Q04(sc:SparkContext,sqlContext: SQLContext) extends TpchQuery(sc,sqlContext) {
 
   import sqlContext.implicits._
 
@@ -114,7 +162,7 @@ super.execute()
   }
 
 }
-class Q05 extends TpchQuery {
+class Q05(sc:SparkContext,sqlContext: SQLContext) extends TpchQuery(sc,sqlContext) {
 
   import sqlContext.implicits._
 
@@ -141,7 +189,7 @@ super.execute()
   }
 
 }
-class Q06 extends TpchQuery {
+class Q06(sc:SparkContext,sqlContext: SQLContext) extends TpchQuery(sc,sqlContext) {
 
   import sqlContext.implicits._
 
@@ -155,7 +203,7 @@ super.execute()
   }
 
 }
-class Q07 extends TpchQuery {
+class Q07(sc:SparkContext,sqlContext: SQLContext) extends TpchQuery(sc,sqlContext) {
 
   import sqlContext.implicits._
 
@@ -191,7 +239,7 @@ super.execute()
   }
 
 }
-class Q08 extends TpchQuery {
+class Q08(sc:SparkContext,sqlContext: SQLContext) extends TpchQuery(sc,sqlContext) {
 
   import sqlContext.implicits._
 
@@ -231,7 +279,7 @@ class Q08 extends TpchQuery {
   }
 
 }
-class Q09 extends TpchQuery {
+class Q09(sc:SparkContext,sqlContext: SQLContext) extends TpchQuery(sc,sqlContext) {
 
   import sqlContext.implicits._
 
@@ -261,7 +309,7 @@ class Q09 extends TpchQuery {
   }
 
 }
-class Q10 extends TpchQuery {
+class Q10(sc:SparkContext,sqlContext: SQLContext) extends TpchQuery(sc,sqlContext) {
 
   import sqlContext.implicits._
 
@@ -289,7 +337,7 @@ class Q10 extends TpchQuery {
   }
 
 }
-class Q11 extends TpchQuery {
+class Q11(sc:SparkContext,sqlContext: SQLContext) extends TpchQuery(sc,sqlContext) {
 
   import sqlContext.implicits._
 
@@ -317,7 +365,7 @@ class Q11 extends TpchQuery {
   }
 
 }
-class Q12 extends TpchQuery {
+class Q12(sc:SparkContext,sqlContext: SQLContext) extends TpchQuery(sc,sqlContext) {
 
   import sqlContext.implicits._
 
@@ -336,15 +384,21 @@ class Q12 extends TpchQuery {
       .join(order, $"l_orderkey" === order("o_orderkey"))
       .select($"l_shipmode", $"o_orderpriority")
       .groupBy($"l_shipmode")
-      .agg(sum(highPriority($"o_orderpriority")), sum(lowPriority($"o_orderpriority")))
+      .agg(
+        sum(when(('o_orderpriority === "1-URGENT") || ('o_orderpriority === "2-HIGH"), 1).otherwise(0)).as("high_line_count"),
+        sum(when(('o_orderpriority !== "1-URGENT") && ('o_orderpriority !== "2-HIGH"), 1).otherwise(0)).as("low_line_count"))
       .sort($"l_shipmode")
+    // if use agg(sum(highProority("o_orderpriority")),sum(lowPriority("o_orderpriority"), spark throw Analysis Exception:
+    //  org.apache.spark.sql.AnalysisException: Duplicate column(s) : "sum(UDF(o_orderpriority))" found, cannot save to JSON format;
+    // maybe this can be an issue to raise.
+    // 3.21 Arvin
 
     outputDF(res)
 
   }
 
 }
-class Q13 extends TpchQuery {
+class Q13(sc:SparkContext,sqlContext: SQLContext) extends TpchQuery(sc,sqlContext) {
 
   import sqlContext.implicits._
 
@@ -366,7 +420,7 @@ class Q13 extends TpchQuery {
   }
 
 }
-class Q14 extends TpchQuery {
+class Q14(sc:SparkContext,sqlContext: SQLContext) extends TpchQuery(sc,sqlContext) {
 
   import sqlContext.implicits._
 
@@ -386,7 +440,7 @@ class Q14 extends TpchQuery {
   }
 
 }
-class Q15 extends TpchQuery {
+class Q15(sc:SparkContext,sqlContext: SQLContext) extends TpchQuery(sc,sqlContext) {
 
   import sqlContext.implicits._
 
@@ -413,7 +467,7 @@ class Q15 extends TpchQuery {
   }
 
 }
-class Q16 extends TpchQuery {
+class Q16(sc:SparkContext,sqlContext: SQLContext) extends TpchQuery(sc,sqlContext) {
 
   import sqlContext.implicits._
 
@@ -443,7 +497,7 @@ class Q16 extends TpchQuery {
   }
 
 }
-class Q17 extends TpchQuery {
+class Q17(sc:SparkContext,sqlContext: SQLContext) extends TpchQuery(sc,sqlContext) {
 
   import sqlContext.implicits._
 
@@ -471,7 +525,7 @@ class Q17 extends TpchQuery {
   }
 
 }
-class Q18 extends TpchQuery {
+class Q18(sc:SparkContext,sqlContext: SQLContext) extends TpchQuery(sc,sqlContext) {
 
   import sqlContext.implicits._
 
@@ -496,7 +550,7 @@ class Q18 extends TpchQuery {
   }
 
 }
-class Q19 extends TpchQuery {
+class Q19(sc:SparkContext,sqlContext: SQLContext) extends TpchQuery(sc,sqlContext) {
 
   import sqlContext.implicits._
 
@@ -534,7 +588,7 @@ class Q19 extends TpchQuery {
   }
 
 }
-class Q20 extends TpchQuery {
+class Q20(sc:SparkContext,sqlContext: SQLContext) extends TpchQuery(sc,sqlContext) {
 
   import sqlContext.implicits._
 
@@ -567,7 +621,7 @@ class Q20 extends TpchQuery {
 
 }
 
-class Q21 extends TpchQuery {
+class Q21(sc:SparkContext,sqlContext: SQLContext) extends TpchQuery(sc,sqlContext) {
 
   import sqlContext.implicits._
 
@@ -614,7 +668,7 @@ class Q21 extends TpchQuery {
 
 }
 
-class Q22 extends TpchQuery {
+class Q22(sc:SparkContext,sqlContext: SQLContext) extends TpchQuery(sc,sqlContext) {
 
   import sqlContext.implicits._
 
