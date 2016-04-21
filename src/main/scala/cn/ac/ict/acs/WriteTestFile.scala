@@ -130,8 +130,9 @@ while(flag){
 //    writeDoubleFile()
 //    writeStringFile
 //writeReadableString()
-    testSplit()
+//    testSplit()
 
+    combineNetflow()
   }
   def testSplit(): Unit ={
     val source = Source.fromFile("/home/arvin/projects/netflow5","unicode")
@@ -153,6 +154,41 @@ while(flag){
 //      val t = iter.next()
 //      println(t.nexthop)
 //    }
+
+  }
+
+  // 使用以前的较小的netflow文件拼接成大的netflow文件来进行测试，
+  // 上次恢复数据时，忘了恢复original-spark1.5.1中的test文件夹，里面有许多测试文件啊，%>_<%
+  // 4.21 Arvin
+  def combineNetflow(): Unit ={
+    val source = Source.fromFile("/home/arvin/netflow5")
+    val source2 = Source.fromFile("/home/arvin/netflow5-1")
+    val source3 = Source.fromFile("/home/arvin/netflow5-2")
+
+    val outputFile = new File("/home/arvin/netflowData")
+
+    val pw = new PrintWriter(outputFile)
+
+
+
+      for (line <- source.getLines(); line2 <- source2.getLines(); line3 <- source3.getLines()) {
+
+        pw.println(line)
+        pw.println(line2)
+        pw.println(line3)
+
+      }
+
+
+
+    source.close()
+    source2.close()
+    source3.close()
+
+    pw.close()
+
+
+
 
   }
 
